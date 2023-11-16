@@ -30,4 +30,24 @@ int main() {
     int length = 50000;
     
     // Allocate memory for the array
-    double
+    double *x = (double *)malloc(length * sizeof(double));
+
+    // Populate the array with random values
+    for (int i = 0; i < length; i++) {
+        x[i] = ((double)rand() / RAND_MAX);
+    }
+
+    // Softmax computation
+    softmax(x, length);
+
+    // Print the result
+    printf("Softmax Result:\n");
+    for (int i = 0; i < length; i++) {
+        printf("%f ", x[i]);
+    }
+    
+    // Free allocated memory
+    free(x);
+
+    return 0;
+}
