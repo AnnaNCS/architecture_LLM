@@ -22,9 +22,7 @@ void softmax(double *x, int length) {
     // Find the maximum value in the array
 	#pragma omp parallel for reduction(max:max_val)
     for (int i = 1; i < length; i++) {
-        if (x[i] > max_val) {
-            max_val = x[i];
-        }
+        if (x[i] > max_val) max_val = x[i];
     }
 	
 	// Compute Softmax in parallel

@@ -24,10 +24,14 @@ void softmax(double *x, int length) {
         }
     }
 
+    // Compute Softmax in parallel
+	for (int i = 0; i < length; i++) {
+		x[i] = exp(x[i] - max_val);
+	}
+
     // Calculate the exponentials and sum
     double sum = 0.0;
     for (int i = 0; i < length; i++) {
-        x[i] = exp(x[i] - max_val);
         sum += x[i];
     }
 
