@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <immintrin.h>
 
+#include <omp.h>
+
 static inline uint64_t rdtsc() {
     unsigned long a, d;
     asm volatile("rdtsc" : "=a" (a), "=d" (d));
@@ -16,22 +18,30 @@ static inline uint64_t rdtsc() {
 void softmax(double *x, int length) {
     
     double max_val = x[0];
-    
+	
     // Find the maximum value in the array
+	#pragma omp parallel for reduction(max:max_val)
     for (int i = 1; i < length; i++) {
         if (x[i] > max_val) {
             max_val = x[i];
         }
     }
+	
+	// Compute Softmax in parallel
+	#pragma omp parallel for
+	for (int i = 0; i < length; i++) {
+		x[i] = exp(x[i] - max_val);
+	}
 
     // Calculate the exponentials and sum
-    double sum = 0.0;
+	double sum = 0.0;
+	#pragma omp parallel for reduction(+:sum)
     for (int i = 0; i < length; i++) {
-        x[i] = exp(x[i] - max_val);
         sum += x[i];
     }
 
     // Normalize by the sum
+	#pragma omp parallel for
     for (int i = 0; i < length; i++) {
         x[i] /= sum;
     }
