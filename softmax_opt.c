@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include <stdint.h> 
 #include <string.h> 
 #include <unistd.h>
 #include <immintrin.h>
-
 #include <omp.h>
 
 static inline uint64_t rdtsc() {
@@ -15,34 +13,40 @@ static inline uint64_t rdtsc() {
     return a | ((uint64_t)d << 32);
 }
 
-void softmax(double *x, int length) {
+void softmax(float *x, int length) {
     
-    double max_val = x[0];
+    float max_val = x[0];
 	
     // Find the maximum value in the array
 	#pragma omp parallel for reduction(max:max_val)
     for (int i = 1; i < length; i++) {
-        if (x[i] > max_val) max_val = x[i];
+        // if (x[i] > max_val) max_val = x[i];
+		max_val = fmax(max_val, x[i]);
     }
-	
+	// 1.6
+
 	// Compute Softmax in parallel
-	#pragma omp parallel for
-	for (int i = 0; i < length; i++) {
-		x[i] = exp(x[i] - max_val);
-	}
+	// #pragma omp parallel for
+	// for (int i = 0; i < length; i++) {
+	// 	x[i] = expm1(x[i] - max_val);
+	// }
+	// 0.8
 
     // Calculate the exponentials and sum
-	double sum = 0.0;
+	float sum = 0.0;
 	#pragma omp parallel for reduction(+:sum)
     for (int i = 0; i < length; i++) {
+		x[i] = exp(x[i] - max_val);
         sum += x[i];
     }
+	// 1.5
 
     // Normalize by the sum
 	#pragma omp parallel for
     for (int i = 0; i < length; i++) {
         x[i] /= sum;
     }
+	// 1.6
 }
 
 int main() {
@@ -52,11 +56,11 @@ int main() {
     uint32_t clock, start, end;
     
     // Allocate memory for the array
-    double *x = (double *)malloc(length * sizeof(double));
+    float *x = (float *)malloc(length * sizeof(float));
 
     // Populate the array with random values
     for (int i = 0; i < length; i++) {
-        x[i] = ((double)rand() / RAND_MAX);
+        x[i] = ((float)rand() / RAND_MAX);
     }
 
     // Start count
