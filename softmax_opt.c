@@ -72,7 +72,7 @@ int main() {
     // Print the result
     // printf("Softmax Result:\n");
     // for (int i = 0; i < length; i++) {
-    //     printf("%f ", x[i]);
+    //     // printf("%f ", x[i]);
     // }
     
     // Free allocated memory
