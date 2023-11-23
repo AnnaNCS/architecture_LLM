@@ -23,14 +23,6 @@ void softmax(float *x, int length) {
         // if (x[i] > max_val) max_val = x[i];
 		max_val = fmax(max_val, x[i]);
     }
-	// 1.6
-
-	// Compute Softmax in parallel
-	// #pragma omp parallel for
-	// for (int i = 0; i < length; i++) {
-	// 	x[i] = expm1(x[i] - max_val);
-	// }
-	// 0.8
 
     // Calculate the exponentials and sum
 	float sum = 0.0;
@@ -39,14 +31,12 @@ void softmax(float *x, int length) {
 		x[i] = exp(x[i] - max_val);
         sum += x[i];
     }
-	// 1.5
 
     // Normalize by the sum
 	#pragma omp parallel for
     for (int i = 0; i < length; i++) {
         x[i] /= sum;
     }
-	// 1.6
 }
 
 int main() {
@@ -80,10 +70,10 @@ int main() {
     printf("%u ticks.\n" , (end - start));
 
     // Print the result
-    printf("Softmax Result:\n");
-    for (int i = 0; i < length; i++) {
-        // printf("%f ", x[i]);
-    }
+    // printf("Softmax Result:\n");
+    // for (int i = 0; i < length; i++) {
+    //     printf("%f ", x[i]);
+    // }
     
     // Free allocated memory
     free(x);
