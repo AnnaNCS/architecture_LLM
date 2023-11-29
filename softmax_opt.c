@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h> 
-#include <string.h> 
-#include <unistd.h>
 #include <immintrin.h>
 #include <omp.h>
 

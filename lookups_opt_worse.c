@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <immintrin.h>
 #include <stdint.h> 
+#include <omp.h>
 
 #define EMBEDDING_SIZE 1024
 #define VOCAB_SIZE 50000
@@ -12,12 +13,13 @@ static inline uint64_t rdtsc() {
     return a | ((uint64_t)d << 32);
 }
 
-// Function to perform embedding lookup
-void embedding_lookup(double** embedding_matrix, int* indices, double** result, int num_indices) {
+void embedding_lookup(double* embedding_matrix, int* indices, double* result, int num_indices) {
+    // #pragma omp parallel for
     for (int i = 0; i < num_indices; ++i) {
-		for (int j = 0; j < EMBEDDING_SIZE; ++j) {
-			result[i][j] = embedding_matrix[indices[i]][j];
-        } 
+        int offset = indices[i] * EMBEDDING_SIZE;
+        for (int j = 0; j < EMBEDDING_SIZE; ++j) {
+            result[i * EMBEDDING_SIZE + j] = embedding_matrix[offset + j];
+        }
     }
 }
 
@@ -26,12 +28,9 @@ int main() {
     // srand(42);
 
     // Dynamically allocate memory for embedding matrix
-    double** embedding_matrix = (double**)malloc(VOCAB_SIZE * sizeof(double*));
-    for (int i = 0; i < VOCAB_SIZE; ++i) {
-        embedding_matrix[i] = (double*)malloc(EMBEDDING_SIZE * sizeof(double));
-        for (int j = 0; j < EMBEDDING_SIZE; ++j) {
-            embedding_matrix[i][j] = (double)rand() / RAND_MAX; // Random values between 0 and 1
-        }
+    double* embedding_matrix = (double*)malloc(VOCAB_SIZE * EMBEDDING_SIZE * sizeof(double));
+    for (int i = 0; i < VOCAB_SIZE * EMBEDDING_SIZE; ++i) {
+        embedding_matrix[i] = (double)rand() / RAND_MAX;
     }
 
     // Dynamically allocate memory for indices
@@ -42,12 +41,9 @@ int main() {
     }
 
     // Dynamically allocate memory for embeddings
-    double** embeddings = (double**)malloc(num_indices * sizeof(double*));
-    for (int i = 0; i < num_indices; ++i) {
-        embeddings[i] = (double*)malloc(EMBEDDING_SIZE * sizeof(double));
-    }
+    double* embeddings = (double*)malloc(num_indices * EMBEDDING_SIZE * sizeof(double));
 
-	uint32_t clock, start, end;
+    uint32_t clock, start, end;
 	// Start count
     clock = 0;
     _mm_mfence();
@@ -68,20 +64,13 @@ int main() {
     // for (int i = 0; i < num_indices; ++i) {
     //     printf("Embedding for index %d:\n", indices[i]);
     //     for (int j = 0; j < EMBEDDING_SIZE; ++j) {
-    //         printf("%f ", embeddings[i][j]);
+    //         printf("%f ", embeddings[i * EMBEDDING_SIZE + j]);
     //     }
     //     printf("\n");
     // }
 
     // Free dynamically allocated memory
-    for (int i = 0; i < VOCAB_SIZE; ++i) {
-        free(embedding_matrix[i]);
-    }
     free(embedding_matrix);
-
-    for (int i = 0; i < num_indices; ++i) {
-        free(embeddings[i]);
-    }
     free(embeddings);
 
     return 0;

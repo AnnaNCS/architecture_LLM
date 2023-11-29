@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include <stdint.h> 
-#include <string.h> 
-#include <unistd.h>
 #include <immintrin.h>
 
 static inline uint64_t rdtsc() {
