@@ -1,38 +1,99 @@
+#include <stdint.h> 
+#include <string.h> 
+#include <unistd.h>
+#include <immintrin.h>
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-#define N 2048
+#define SZ 2048
 
-//MATRIX MULT CODE 
-void matrix_multiply(int A[N][N], int B[N][N], int C[N][N]) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
+static inline uint64_t rdtsc() {
+	unsigned long a, d;
+    asm volatile("rdtsc" : "=a" (a), "=d" (d));
+    return a | ((uint64_t)d << 32);
+}
+
+
+// Function to generate a random value between 0 and 1
+double random_double() {
+    return ((double)rand() / RAND_MAX);
+}
+
+// Basic matrix multiplication
+void matrix_multiply(double **A, double **B, double **C, int sz) {
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < sz; j++) {
             C[i][j] = 0;
-            for (int k = 0; k < N; ++k) {
+            for (int k = 0; k < sz; k++) {
                 C[i][j] += A[i][k] * B[k][j];
             }
         }
     }
 }
 
-int main() {
-    // Initialize matrices A, B, and C
-    int A[N][N], B[N][N], C[N][N];
 
-    // Assume matrices A and B are filled with appropriate values
-
-    // Perform matrix multiplication
-    matrix_multiply(A, B, C);
-
-    // Print the result matrix C if needed
-    /*
-    printf("Resultant Matrix C:\n");
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            printf("%d ", C[i][j]);
-        }
-        printf("\n");
+// Function to allocate memory for a 2D matrix
+double** allocate_matrix(int rows, int cols) {
+    double** matrix = (double**)malloc(rows * sizeof(double*));
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (double*)malloc(cols * sizeof(double));
     }
-    */
+    return matrix;
+}
+
+// Function to free memory allocated for a 2D matrix
+void free_matrix(double** matrix, int rows) {
+    for (int i = 0; i < rows; i++) {
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
+int main(void) {
+
+	// Set seed for random number generation
+    srand(time(NULL));
+
+    // Typical size for LLMs
+    int sz = 2048;
+
+    // Allocate memory for matrices A, B, and C
+    double** A = allocate_matrix(sz, sz);
+    double** B = allocate_matrix(sz, sz);
+    double** C = allocate_matrix(sz, sz);
+
+    // Initialize matrix A with random values
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < sz; j++) {
+            A[i][j] = random_double();
+			B[i][j] = random_double();
+			C[i][j] = 0.0;
+        }
+    }
+    
+    uint32_t clock, start, end;
+    // start count
+    clock = 0;
+    _mm_mfence();
+    start = rdtsc();
+
+    // Basic matrix multiplication
+    matrix_multiply(A, B, C, sz);
+
+    
+	// stop count
+    end = rdtsc();
+    _mm_mfence();
+    clock = clock + (end - start);
+
+    printf("%u ticks.\n" , ( end - start));
+
+	// Free allocated memory
+    free_matrix(A, sz);
+    free_matrix(B, sz);
+    free_matrix(C, sz);
 
     return 0;
 }
