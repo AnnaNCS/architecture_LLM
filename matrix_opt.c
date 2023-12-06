@@ -24,11 +24,23 @@ double random_double() {
 
 // Basic matrix multiplication with optimization for memory access
 void matrix_multiply(double **A, double **B, double **C, int sz) {
+    int sum = 0;
     #pragma omp parallel for private(i,j,k) shared(A,B,C)
     for (int i = 0; i < sz; i += BLOCK_SIZE) {
         for (int j = 0; j < sz; j += BLOCK_SIZE) {
             for (int k = 0; k < sz; k += BLOCK_SIZE) {
                 // Iterate over blocks
+                for (int ii = 0; ii < BLOCK_SIZE; ii++){
+                    for (int jj = 0; jj < BLOCK_SIZE; jj++){
+                        for (int kk = 0; kk < BLOCK_SIZE; kk++){
+                            sum += A[ii+i][kk + k] * B[kk + k][jj + j];
+                        }
+                        C[ii + i][jj + j] += sum;
+                    }
+
+
+                }
+                /*
                 for (int ii = i; ii < i + BLOCK_SIZE; ii++) {
                     for (int jj = j; jj < j + BLOCK_SIZE; jj++) {
                         for (int kk = k; kk < k + BLOCK_SIZE; kk++) {
@@ -36,6 +48,7 @@ void matrix_multiply(double **A, double **B, double **C, int sz) {
                         }
                     }
                 }
+                */
             }
         }
     }
