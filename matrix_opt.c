@@ -24,6 +24,7 @@ double random_double() {
 
 // Basic matrix multiplication with optimization for memory access
 void matrix_multiply(double **A, double **B, double **C, int sz) {
+    #pragma omp parallel for private(i,j,k) shared(A,B,C)
     for (int i = 0; i < sz; i += BLOCK_SIZE) {
         for (int j = 0; j < sz; j += BLOCK_SIZE) {
             for (int k = 0; k < sz; k += BLOCK_SIZE) {
