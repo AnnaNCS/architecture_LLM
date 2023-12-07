@@ -40,8 +40,8 @@ void softmax(float *x, int length) {
 int main() {
     // Typical vector length for LLM vocabulary
     int length = 50000;
-    uint32_t result_vect;
-    uint32_t clock, start, end;
+    uint64_t result_vect;
+    uint64_t start, end;
     
     // Allocate memory for the array
     float *x = (float *)malloc(length * sizeof(float));
@@ -52,7 +52,6 @@ int main() {
     }
 
     // Start count
-    clock = 0;
     _mm_mfence();
     start = rdtsc();
     
@@ -62,10 +61,9 @@ int main() {
     // Stop count
     end = rdtsc();
     _mm_mfence();
-    clock = clock + (end - start);
 
     // Print number of ticks
-    printf("%u ticks.\n" , (end - start));
+    printf("%lu ticks.\n" , (end - start));
 
     // Print the result
     // printf("Softmax Result:\n");

@@ -16,7 +16,6 @@ static inline uint64_t rdtsc() {
     return a | ((uint64_t)d << 32);
 }
 
-
 // Function to generate a random value between 0 and 1
 double random_double() {
     return ((double)rand() / RAND_MAX);
@@ -24,36 +23,34 @@ double random_double() {
 
 // Basic matrix multiplication with optimization for memory access
 void matrix_multiply(double **A, double **B, double **C, int sz) {
-    int sum = 0;
+    int i, j, k;
     #pragma omp parallel for private(i,j,k) shared(A,B,C)
-    for (int i = 0; i < sz; i += BLOCK_SIZE) {
-        for (int j = 0; j < sz; j += BLOCK_SIZE) {
-            for (int k = 0; k < sz; k += BLOCK_SIZE) {
-                // Iterate over blocks
-                for (int ii = 0; ii < BLOCK_SIZE; ii++){
-                    for (int jj = 0; jj < BLOCK_SIZE; jj++){
-                        for (int kk = 0; kk < BLOCK_SIZE; kk++){
-                            sum += A[ii+i][kk + k] * B[kk + k][jj + j];
-                        }
-                        C[ii + i][jj + j] += sum;
-                    }
-
-
-                }
-                /*
-                for (int ii = i; ii < i + BLOCK_SIZE; ii++) {
-                    for (int jj = j; jj < j + BLOCK_SIZE; jj++) {
-                        for (int kk = k; kk < k + BLOCK_SIZE; kk++) {
-                            C[ii][jj] += A[ii][kk] * B[kk][jj];
-                        }
-                    }
-                }
-                */
+    for (i = 0; i < sz; i++) {
+        for (j = 0; j < sz; j++) {
+            // Unroll loop by a factor of 4
+            for (k = 0; k < sz; k += 4) {
+                C[i][j] += A[i][k] * B[k][j];
+                C[i][j] += A[i][k + 1] * B[k + 1][j];
+                C[i][j] += A[i][k + 2] * B[k + 2][j];
+                C[i][j] += A[i][k + 3] * B[k + 3][j];
             }
         }
     }
 }
 
+// Basic FLAT matrix multiplication with optimization for memory access
+void matrix_multiply_flat(double *A_flat, double *B_flat, double *C_flat, int sz) {
+    int sum = 0;
+	for (int i = 0; i < sz; i++){
+		for (int j = 0; j < sz; j++){
+			C_flat[(sz * i) + j] = 0;
+			for (int k = 0; k < sz; k++){
+				sum += A_flat[(sz * i) + k] * B_flat[(sz * k) + j];
+				}
+			C_flat[(sz * i) + j] = sum;
+		}
+    }
+}
 
 // Function to allocate memory for a 2D matrix
 double** allocate_matrix(int rows, int cols) {
@@ -73,7 +70,6 @@ void free_matrix(double** matrix, int rows) {
 }
 
 int main(void) {
-
 	// Set seed for random number generation
     srand(time(NULL));
 
@@ -93,15 +89,31 @@ int main(void) {
 			C[i][j] = 0.0;
         }
     }
-    
-    uint32_t clock, start, end;
+
+    // Allocate memory for FLAT matrices A, B, and C
+    double* A_flat = malloc(sz * sz * sizeof(double));
+    double* B_flat = malloc(sz * sz * sizeof(double));
+    double* C_flat = malloc(sz * sz * sizeof(double));
+
+    // Initialize matrix A with random values
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < sz; j++) {
+            A_flat[(sz * i) + j] = rand() % 30;
+            B_flat[(sz * i) + j] = rand() % 30;
+            C_flat[i * sz + j] = 0.0;
+        }
+    }
+
+    uint64_t start, end;
     // start count
-    clock = 0;
     _mm_mfence();
     start = rdtsc();
 
     // Basic matrix multiplication
-    matrix_multiply(A, B, C, sz);
+    // matrix_multiply(A, B, C, sz);
+
+    // Flatten matrix multilplication
+    // matrix_multiply_flat(A_flat, B_flat, C_flat, sz);
 	// Perform matrix multiplication using MKL
     // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, sz, sz, sz, 1.0, A, sz, B, sz, 0.0, C, sz);
 
@@ -109,9 +121,8 @@ int main(void) {
 	// stop count
     end = rdtsc();
     _mm_mfence();
-    clock = clock + (end - start);
 
-    printf("%u ticks.\n" , ( end - start));
+    printf("%lu ticks.\n" , ( end - start));
 
 	// Free allocated memory
     free_matrix(A, sz);

@@ -1,13 +1,7 @@
 #include <stdint.h> 
-#include <string.h> 
-#include <unistd.h>
 #include <immintrin.h>
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
-
-#define SZ 2048
 
 static inline uint64_t rdtsc() {
 	unsigned long a, d;
@@ -15,24 +9,10 @@ static inline uint64_t rdtsc() {
     return a | ((uint64_t)d << 32);
 }
 
-
 // Function to generate a random value between 0 and 1
 double random_double() {
     return ((double)rand() / RAND_MAX);
 }
-
-// Basic matrix multiplication
-void matrix_multiply(double **A, double **B, double **C, int sz) {
-    for (int i = 0; i < sz; i++) {
-        for (int j = 0; j < sz; j++) {
-            C[i][j] = 0;
-            for (int k = 0; k < sz; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-}
-
 
 // Function to allocate memory for a 2D matrix
 double** allocate_matrix(int rows, int cols) {
@@ -50,6 +30,20 @@ void free_matrix(double** matrix, int rows) {
     }
     free(matrix);
 }
+
+
+
+// Basic matrix multiplication
+void matrix_multiply(double **A, double **B, double **C, int sz) {
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < sz; j++) {
+            for (int k = 0; k < sz; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
 
 int main(void) {
 
@@ -73,7 +67,7 @@ int main(void) {
         }
     }
     
-    uint32_t clock, start, end;
+    uint64_t clock, start, end;
     // start count
     clock = 0;
     _mm_mfence();
@@ -86,9 +80,8 @@ int main(void) {
 	// stop count
     end = rdtsc();
     _mm_mfence();
-    clock = clock + (end - start);
 
-    printf("%u ticks.\n" , ( end - start));
+    printf("%lu ticks.\n" , (end - start));
 
 	// Free allocated memory
     free_matrix(A, sz);

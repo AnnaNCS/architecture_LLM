@@ -47,9 +47,8 @@ int main() {
         embeddings[i] = (double*)malloc(EMBEDDING_SIZE * sizeof(double));
     }
 
-	uint32_t clock, start, end;
+	uint64_t start, end;
 	// Start count
-    clock = 0;
     _mm_mfence();
     start = rdtsc();
     
@@ -59,10 +58,9 @@ int main() {
     // Stop count
     end = rdtsc();
     _mm_mfence();
-    clock = clock + (end - start);
 
     // Print number of ticks
-    printf("%u ticks.\n" , (end - start));
+    printf("%lu ticks.\n" , (end - start));
 
     // Display the results
     // for (int i = 0; i < num_indices; ++i) {
