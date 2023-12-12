@@ -1,92 +1,57 @@
-#include <stdint.h> 
-#include <immintrin.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+int matrixSize = 2048;
+
 static inline uint64_t rdtsc() {
-	unsigned long a, d;
-    asm volatile("rdtsc" : "=a" (a), "=d" (d));
-    return a | ((uint64_t)d << 32);
+  unsigned long a, d;
+  asm volatile("rdtsc" : "=a" (a), "=d" (d));
+  return a | ((uint64_t)d << 32);
 }
 
-// Function to generate a random value between 0 and 1
-double random_double() {
-    return ((double)rand() / RAND_MAX);
+void basicMatMul(int *matA, int *matB, int*result) {
+  for (int i = 0; i < matrixSize; i++){
+    for (int j = 0; j < matrixSize; j++){
+      result[(matrixSize * i) + j] = 0;
+      for (int k = 0; k < matrixSize; k++){
+        result[(matrixSize * i) + j] += matA[(matrixSize * i) + k] * matB[(matrixSize * k) + j];
+      }   
+    }   
+  }
 }
 
-// Function to allocate memory for a 2D matrix
-double** allocate_matrix(int rows, int cols) {
-    double** matrix = (double**)malloc(rows * sizeof(double*));
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = (double*)malloc(cols * sizeof(double));
+int main() {
+
+  time_t t;
+  uint64_t start, end, clock;
+  srand((unsigned) time(&t));
+
+  //Data Allocation for basic Matrix Multiplication
+  int* matA = malloc(matrixSize * matrixSize * sizeof(int));
+  int* matB = malloc(matrixSize * matrixSize * sizeof(int));
+  int *result1 = malloc(matrixSize * matrixSize * sizeof(int));
+  
+  for (int i = 0; i < matrixSize; i++){
+    for (int j = 0; j < matrixSize; j++){
+      matA[(matrixSize * i) + j] = rand() % 30;
+      matB[(matrixSize * i) + j] = rand() % 30;
+      result1[(matrixSize * i) + j] = 0;
     }
-    return matrix;
-}
-
-// Function to free memory allocated for a 2D matrix
-void free_matrix(double** matrix, int rows) {
-    for (int i = 0; i < rows; i++) {
-        free(matrix[i]);
-    }
-    free(matrix);
-}
-
-
-
-// Basic matrix multiplication
-void matrix_multiply(double **A, double **B, double **C, int sz) {
-    for (int i = 0; i < sz; i++) {
-        for (int j = 0; j < sz; j++) {
-            for (int k = 0; k < sz; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-}
-
-
-int main(void) {
-
-	// Set seed for random number generation
-    srand(time(NULL));
-
-    // Typical size for LLMs
-    int sz = 2048;
-
-    // Allocate memory for matrices A, B, and C
-    double** A = allocate_matrix(sz, sz);
-    double** B = allocate_matrix(sz, sz);
-    double** C = allocate_matrix(sz, sz);
-
-    // Initialize matrix A with random values
-    for (int i = 0; i < sz; i++) {
-        for (int j = 0; j < sz; j++) {
-            A[i][j] = random_double();
-			B[i][j] = random_double();
-			C[i][j] = 0.0;
-        }
-    }
+  }
     
-    uint64_t clock, start, end;
-    // start count
-    clock = 0;
-    _mm_mfence();
-    start = rdtsc();
+  start = rdtsc();
+  basicMatMul(matA, matB, result1);
+  end = rdtsc();
 
-    // Basic matrix multiplication
-    matrix_multiply(A, B, C, sz);
+  clock = end - start;
+  free(matA);
+  free(matB);
+  free(result1);
 
-    
-	// stop count
-    end = rdtsc();
-    _mm_mfence();
-
-    printf("%lu ticks.\n" , (end - start));
-
-	// Free allocated memory
-    free_matrix(A, sz);
-    free_matrix(B, sz);
-    free_matrix(C, sz);
-
-    return 0;
+  printf("took %lu ticks to find the basic matrix product\n", clock);
+  
+  return 0;
 }

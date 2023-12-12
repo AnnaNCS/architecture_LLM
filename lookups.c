@@ -34,6 +34,7 @@ int main() {
         }
     }
 
+
     // Dynamically allocate memory for indices
     int num_indices = 20;
     int indices[num_indices];
