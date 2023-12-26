@@ -1,6 +1,10 @@
-# architecture_LLM
+# Architecture LLM
 
+## About
 
+Computer Architecture course Assignment at Columbia University and New York University, Fall 2023.
+
+## Usage
 Part 2:
 To run the code, use the following command:
 gcc softmax.c -o softmax -lm
